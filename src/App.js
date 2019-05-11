@@ -85,6 +85,7 @@ class App extends Component {
           </Modal.Footer>
         </Modal>
 
+
         <Jumbotron>
           <h3>Iftar 2019 - Registration</h3>
         </Jumbotron>

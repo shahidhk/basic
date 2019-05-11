@@ -6,6 +6,7 @@ import {
   Badge,
 } from 'react-bootstrap';
 import gql from 'graphql-tag';
+import LoadingOverlay from 'react-loading-overlay';
 
 const QUERY_GET_INFO_ON_MOBILE = gql`
   query getInfo($num: String!) {
@@ -61,13 +62,14 @@ class Registration extends Component {
   constructor (props) {
     super(props);
     this.state = {
+      showLoading: false,
       alert: {
         variant: 'info',
         message: 'Enter 10 digit mobile number',
         show: true
       },
       data: getDefaultData,
-      saveButtonText: 'Save'
+      saveButtonText: 'Save',
     };
     this.handleInputChange = this.handleInputChange.bind(this);
     this.renderAlert= this.renderAlert.bind(this);
@@ -90,7 +92,8 @@ class Registration extends Component {
       return;
     }
     this.setState({
-      saveButtonText: 'Saving...'
+      saveButtonText: 'Saving...',
+      showLoading: true,
     })
     try {
       let cleanedVariables = JSON.parse(JSON.stringify(this.state.data))
@@ -109,7 +112,8 @@ class Registration extends Component {
           message: `Marked ${this.state.data.mobile} as present`
         },
         data: getDefaultData(),
-        saveButtonText: 'Save'
+        saveButtonText: 'Save',
+        showLoading: false,
       });
       this.mobileInput.current.focus();
     } catch (err) {
@@ -117,7 +121,8 @@ class Registration extends Component {
         alert: {
           show: true,
           variant: 'danger',
-          message: 'An error occured: ' + err
+          message: 'An error occured: ' + err,
+          showLoading: false,
         }
       })
       console.error(err);
@@ -140,7 +145,8 @@ class Registration extends Component {
           },
           data: {
             ...this.state.data,
-          }
+          },
+          showLoading: false,
         })
         return;
       } else {
@@ -151,7 +157,8 @@ class Registration extends Component {
             variant: 'success',
             message:'Data for ' + mobile + ' loaded from database. Edit and save.'
           },
-          data
+          data,
+          showLoading: false,
         })
         return;
       }
@@ -161,7 +168,8 @@ class Registration extends Component {
           show: true,
           variant: 'danger',
           message: 'An error occured: ' + err
-        }
+        },
+        showLoading: false,
       })
       console.error(err);
     }
@@ -170,7 +178,8 @@ class Registration extends Component {
         show: true,
         variant: 'info',
         message: 'Loading details for ' + mobile
-      }
+      },
+      showLoading: false,
     })
   }
   handleInputChange(event) {
@@ -196,7 +205,8 @@ class Registration extends Component {
           data:{
             ...this.state.data,
             [name]: value
-          }
+          },
+          showLoading: true,
         })
         this.search(value);
       }
@@ -223,66 +233,73 @@ class Registration extends Component {
       }
     }
     return (
-      <Form>
-        <Button
-          variant="success" type="submit" block
-          onClick={(e)=> {e.preventDefault(); this.save()}}
-        >
-          {this.state.saveButtonText}
-        </Button>
-        <br/>
-        {this.renderAlert()}
-        <Form.Group controlId="formMobileNumber">
-          <Form.Label>Mobile Number {
-            attendanceBadge()
-          }
-          </Form.Label>
-          <Form.Control
-            ref={this.mobileInput}
-            type="number"
-            placeholder="mobile - 10 digit"
-            required
-            min="6000000000"
-            max="9999999999"
-            name="mobile"
-            value={this.state.data.mobile || ''}
-            onChange={this.handleInputChange}
-          />
-        </Form.Group>
-        <Form.Group controlId="formOtherNumber">
-          <Form.Control
-            type="number"
-            placeholder="other number"
-            min="6000000000"
-            max="9999999999"
-            name="other_number"
-            value={this.state.data.other_number || ''}
-            onChange={this.handleInputChange}
-          />
-        </Form.Group>
-        <Form.Group controlId="formName">
-          <Form.Label>Name</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="name"
-            name="name"
-            value={this.state.data.name || ''}
-            onFocus={handleFocus}
-            onChange={this.handleInputChange}
-          />
-        </Form.Group>
-        <Form.Group controlId="remarks">
-          <Form.Label>Remarks</Form.Label>
-          <Form.Control
-            type="text"
-            placeholder="remarks"
-            name="remarks"
-            value={this.state.data.remarks || ''}
-            onChange={this.handleInputChange}
-            onFocus={handleFocus}
-          />
-        </Form.Group>
-      </Form>
+      <LoadingOverlay
+        active={this.state.showLoading}
+        spinner={true}
+        fadeSpeed={100}
+        text='Loading...'
+      >
+        <Form>
+          <Button
+            variant="success" type="submit" block
+            onClick={(e)=> {e.preventDefault(); this.save()}}
+          >
+            {this.state.saveButtonText}
+          </Button>
+          <br/>
+          {this.renderAlert()}
+          <Form.Group controlId="formMobileNumber">
+            <Form.Label>Mobile Number {
+              attendanceBadge()
+            }
+            </Form.Label>
+            <Form.Control
+              ref={this.mobileInput}
+              type="number"
+              placeholder="mobile - 10 digit"
+              required
+              min="6000000000"
+              max="9999999999"
+              name="mobile"
+              value={this.state.data.mobile || ''}
+              onChange={this.handleInputChange}
+            />
+          </Form.Group>
+          <Form.Group controlId="formOtherNumber">
+            <Form.Control
+              type="number"
+              placeholder="other number"
+              min="6000000000"
+              max="9999999999"
+              name="other_number"
+              value={this.state.data.other_number || ''}
+              onChange={this.handleInputChange}
+            />
+          </Form.Group>
+          <Form.Group controlId="formName">
+            <Form.Label>Name</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="name"
+              name="name"
+              value={this.state.data.name || ''}
+              onFocus={handleFocus}
+              onChange={this.handleInputChange}
+            />
+          </Form.Group>
+          <Form.Group controlId="remarks">
+            <Form.Label>Remarks</Form.Label>
+            <Form.Control
+              type="text"
+              placeholder="remarks"
+              name="remarks"
+              value={this.state.data.remarks || ''}
+              onChange={this.handleInputChange}
+              onFocus={handleFocus}
+            />
+          </Form.Group>
+        </Form>
+      </LoadingOverlay>
     )
   }
 }
