@@ -6,7 +6,7 @@ import { HttpLink } from 'apollo-link-http';
 
 import { InMemoryCache } from 'apollo-cache-inmemory';
 
-const httpurl = 'https://api.basic.shahidh.in/v1alpha1/graphql';
+const httpurl = 'https://api.iftar.shahidh.in/v1alpha1/graphql';
 
 const getNewClient = (accessKey) => {
 

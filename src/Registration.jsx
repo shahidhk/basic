@@ -9,7 +9,7 @@ import gql from 'graphql-tag';
 
 const QUERY_GET_INFO_ON_MOBILE = gql`
   query getInfo($num: String!) {
-    students(
+    attendees(
       where:{_or:[
         {mobile: {_eq: $num}},
         {other_number: {_eq: $num}}
@@ -18,28 +18,22 @@ const QUERY_GET_INFO_ON_MOBILE = gql`
       mobile
       other_number
       name
-      college
-      course
-      year
-      source
+      remarks 
       attended
     }
   }`;
 
-const MUTATION_SAVE_STUDENT = gql`
-mutation upsertStudent($data: students_insert_input!) {
-  insert_students(
+const MUTATION_SAVE_DATA = gql`
+mutation upsertData($data: attendees_insert_input!) {
+  insert_attendees(
     objects:[$data],
     on_conflict: {
-      constraint: students_pkey,
+      constraint: attendees_pkey,
       update_columns: [
         attended
-        college
-        course
         name
         other_number
-        source
-        year
+        remarks
       ]
     }
   ) {
@@ -48,13 +42,20 @@ mutation upsertStudent($data: students_insert_input!) {
       mobile
       other_number
       name
-      college
-      course
-      year
+      remarks
       attended
     }
   }
 }`;
+
+const getDefaultData = () => {
+  return {
+    mobile: '', 
+    name: null,
+    attended: false,
+    remarks: null,
+  }
+}
 
 class Registration extends Component {
   constructor (props) {
@@ -65,25 +66,20 @@ class Registration extends Component {
         message: 'Enter 10 digit mobile number',
         show: true
       },
-      student: {
-        mobile: '',
-        other_number: '',
-        name: '',
-        college: '',
-        course: '',
-        year: '',
-        attended: false,
-        source: ''
-      },
+      data: getDefaultData,
       saveButtonText: 'Save'
     };
     this.handleInputChange = this.handleInputChange.bind(this);
     this.renderAlert= this.renderAlert.bind(this);
     this.search = this.search.bind(this);
     this.save = this.save.bind(this);
+    this.mobileInput = React.createRef();
+  }
+  componentDidMount() {
+    this.mobileInput.current.focus();
   }
   async save() {
-    if (this.state.student.mobile.length !== 10) {
+    if (this.state.data.mobile.length !== 10) {
       this.setState({
         alert: {
           show: true,
@@ -97,11 +93,11 @@ class Registration extends Component {
       saveButtonText: 'Saving...'
     })
     try {
-      let cleanedVariables = JSON.parse(JSON.stringify(this.state.student))
+      let cleanedVariables = JSON.parse(JSON.stringify(this.state.data))
       delete cleanedVariables['__typename'];
       cleanedVariables.attended = true;
       let response = await this.props.client.mutate({
-        mutation: MUTATION_SAVE_STUDENT,
+        mutation: MUTATION_SAVE_DATA,
         variables: {
           data: cleanedVariables
         }
@@ -110,11 +106,12 @@ class Registration extends Component {
         alert: {
           show: true,
           variant: 'success',
-          message: `Marked ${this.state.student.mobile} as present`
+          message: `Marked ${this.state.data.mobile} as present`
         },
-        student: response.data.insert_students.returning[0],
+        data: getDefaultData(),
         saveButtonText: 'Save'
-      })
+      });
+      this.mobileInput.current.focus();
     } catch (err) {
       this.setState({
         alert: {
@@ -134,27 +131,27 @@ class Registration extends Component {
           num: mobile
         }
       })
-      if (response.data.students.length === 0) {
+      if (response.data.attendees.length === 0) {
         this.setState({
           alert: {
             show: true,
             variant: 'warning',
             message: 'No details found for ' + mobile + '. Add and save.'
           },
-          student: {
-            ...this.state.student,
+          data: {
+            ...this.state.data,
           }
         })
         return;
       } else {
-        let student = response.data.students[0];
+        let data = response.data.attendees[0];
         this.setState({
           alert: {
             show: true,
             variant: 'success',
             message:'Data for ' + mobile + ' loaded from database. Edit and save.'
           },
-          student
+          data
         })
         return;
       }
@@ -182,8 +179,8 @@ class Registration extends Component {
     const name = target.name;
 
     this.setState({
-      student: {
-        ...this.state.student,
+      data: {
+        ...this.state.data,
         [name]: value
       }
     });
@@ -196,8 +193,8 @@ class Registration extends Component {
             variant: 'info',
             message: 'Searching...'
           },
-          student:{
-            ...this.state.student,
+          data:{
+            ...this.state.data,
             [name]: value
           }
         })
@@ -218,8 +215,8 @@ class Registration extends Component {
   render() {
     const handleFocus = (event) => event.target.select();
     const attendanceBadge = () => {
-      if (this.state.student.name) {
-        if (!this.state.student.attended) {
+      if (this.state.data.name) {
+        if (!this.state.data.attended) {
           return <Badge variant="secondary">Save to mark present</Badge>
         }
         return <Badge variant="success">Present</Badge>
@@ -227,19 +224,28 @@ class Registration extends Component {
     }
     return (
       <Form>
-      {this.renderAlert()}
+        <Button
+          variant="success" type="submit" block
+          onClick={(e)=> {e.preventDefault(); this.save()}}
+        >
+          {this.state.saveButtonText}
+        </Button>
+        <br/>
+        {this.renderAlert()}
         <Form.Group controlId="formMobileNumber">
-      <Form.Label>Mobile Number {
-        attendanceBadge()
-      }</Form.Label>
+          <Form.Label>Mobile Number {
+            attendanceBadge()
+          }
+          </Form.Label>
           <Form.Control
+            ref={this.mobileInput}
             type="number"
             placeholder="mobile - 10 digit"
             required
             min="6000000000"
             max="9999999999"
             name="mobile"
-            value={this.state.student.mobile || ''}
+            value={this.state.data.mobile || ''}
             onChange={this.handleInputChange}
           />
         </Form.Group>
@@ -250,7 +256,7 @@ class Registration extends Component {
             min="6000000000"
             max="9999999999"
             name="other_number"
-            value={this.state.student.other_number || ''}
+            value={this.state.data.other_number || ''}
             onChange={this.handleInputChange}
           />
         </Form.Group>
@@ -260,48 +266,22 @@ class Registration extends Component {
             type="text"
             placeholder="name"
             name="name"
-            value={this.state.student.name || ''}
+            value={this.state.data.name || ''}
             onFocus={handleFocus}
             onChange={this.handleInputChange}
           />
         </Form.Group>
-        <Form.Group controlId="formCollege">
-          <Form.Label>College, course & year</Form.Label>
+        <Form.Group controlId="remarks">
+          <Form.Label>Remarks</Form.Label>
           <Form.Control
             type="text"
-            placeholder="college"
-            name="college"
-            value={this.state.student.college || ''}
+            placeholder="remarks"
+            name="remarks"
+            value={this.state.data.remarks || ''}
             onChange={this.handleInputChange}
             onFocus={handleFocus}
           />
         </Form.Group>
-        <Form.Group controlId="formCourse">
-          <Form.Control
-            type="text"
-            placeholder="course"
-            name="course"
-            value={this.state.student.course || ''}
-            onChange={this.handleInputChange}
-            onFocus={handleFocus}
-          />
-        </Form.Group>
-        <Form.Group controlId="formYear">
-          <Form.Control
-            type="number"
-            placeholder="year"
-            name="year"
-            value={this.state.student.year || ''}
-            onChange={this.handleInputChange}
-            onFocus={handleFocus}
-          />
-        </Form.Group>
-        <Button
-          variant="success" type="submit" block
-          onClick={(e)=> {e.preventDefault(); this.save()}}
-        >
-          {this.state.saveButtonText}
-        </Button>
       </Form>
     )
   }

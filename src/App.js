@@ -65,7 +65,7 @@ class App extends Component {
       <ApolloProvider client={getNewClient(this.state.accessKey)}>
         <Modal show={this.state.showAccessKeyModal} onHide={this.handleClose}>
           <Modal.Header closeButton>
-            <Modal.Title>BASIC 2019 - Registrations</Modal.Title>
+            <Modal.Title>Iftar 2019 - Registrations</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form.Group controlId="formAccessKey">
@@ -86,7 +86,7 @@ class App extends Component {
         </Modal>
 
         <Jumbotron>
-          <h3>BASIC 2019 - Registration</h3>
+          <h3>Iftar 2019 - Registration</h3>
         </Jumbotron>
         <Container>
           <Row>
