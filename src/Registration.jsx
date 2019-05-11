@@ -223,7 +223,8 @@ class Registration extends Component {
     }
   }
   render() {
-    const handleFocus = (event) => event.target.select();
+    // const handleFocus = (event) => event.target.select();
+    const handleFocus = (event) => {};
     const attendanceBadge = () => {
       if (this.state.data.name) {
         if (!this.state.data.attended) {
